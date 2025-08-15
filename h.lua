@@ -99,7 +99,7 @@ task.spawn(function()
                     if modeAllPlayers or player.UserId == TargetUserId then
                         game.ReplicatedStorage.CarbonResource.Events:GetChildren()[4]:FireServer(
                             player.Character.Humanoid,
-                            100,
+                            math.huge,
                             "Head",
                             {'nil', 'Auth', 'nil', 'nil'}
                         )
