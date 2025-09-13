@@ -1,6 +1,6 @@
 -- Method to discover actual UGC names in ServerAssets
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerAssets = require(ReplicatedStorage.ClientModules.ServerAssets)
+local ServerAssets = require(ReplicatedStorage.SharedModules.ServerAssets)
 
 -- Function to brute force common UGC names
 local function findUGCNames()
@@ -125,3 +125,4 @@ for name, item in pairs(foundUGC) do
     print("- " .. name)
 end
 print(string.rep("=", 60))
+
