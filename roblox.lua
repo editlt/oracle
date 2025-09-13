@@ -1,158 +1,127 @@
--- Create ScreenGui that stays after death
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KillPanel"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+-- Method to discover actual UGC names in ServerAssets
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerAssets = require(ReplicatedStorage.ClientModules.ServerAssets)
 
--- Main draggable frame
-local Frame = Instance.new("Frame")
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 220, 0, 200)
-Frame.Position = UDim2.new(0.5, -110, 0, 100)
-Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Frame.Active = true
-Frame.Draggable = true
-
--- Toggle Kill Loop button
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Parent = Frame
-ToggleButton.Size = UDim2.new(1, -20, 0, 40)
-ToggleButton.Position = UDim2.new(0, 10, 0, 10)
-ToggleButton.Text = "Start Kill Loop"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.SourceSans
-ToggleButton.TextSize = 20
-
--- Mode button
-local ModeButton = Instance.new("TextButton")
-ModeButton.Parent = Frame
-ModeButton.Size = UDim2.new(1, -20, 0, 40)
-ModeButton.Position = UDim2.new(0, 10, 0, 60)
-ModeButton.Text = "Mode: Single Target"
-ModeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-ModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ModeButton.Font = Enum.Font.SourceSans
-ModeButton.TextSize = 20
-
--- UserId input box
-local UserIdBox = Instance.new("TextBox")
-UserIdBox.Parent = Frame
-UserIdBox.Size = UDim2.new(1, -20, 0, 30)
-UserIdBox.Position = UDim2.new(0, 10, 0, 110)
-UserIdBox.PlaceholderText = "Enter UserId"
-UserIdBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-UserIdBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-UserIdBox.Font = Enum.Font.SourceSans
-UserIdBox.TextSize = 18
-UserIdBox.Text = ""
-
--- Team name input box
-local TeamBox = Instance.new("TextBox")
-TeamBox.Parent = Frame
-TeamBox.Size = UDim2.new(1, -20, 0, 30)
-TeamBox.Position = UDim2.new(0, 10, 0, 150)
-TeamBox.PlaceholderText = "Enter Team Name"
-TeamBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-TeamBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-TeamBox.Font = Enum.Font.SourceSans
-TeamBox.TextSize = 18
-TeamBox.Text = ""
-TeamBox.Visible = false -- hidden unless in team mode
-
--- Variables
-local killLoop = false
-local mode = "Single" -- Single, All, Team
-local TargetUserId = 1159486467
-local TargetTeam = ""
-
--- Toggle kill loop
-ToggleButton.MouseButton1Click:Connect(function()
-    killLoop = not killLoop
-    if killLoop then
-        ToggleButton.Text = "Stop Kill Loop"
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-    else
-        ToggleButton.Text = "Start Kill Loop"
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    end
-end)
-
--- Cycle through modes
-ModeButton.MouseButton1Click:Connect(function()
-    if mode == "Single" then
-        mode = "All"
-        ModeButton.Text = "Mode: All Players"
-        ModeButton.BackgroundColor3 = Color3.fromRGB(170, 0, 170)
-        UserIdBox.Visible = false
-        TeamBox.Visible = false
-    elseif mode == "All" then
-        mode = "Team"
-        ModeButton.Text = "Mode: Specific Team"
-        ModeButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-        UserIdBox.Visible = false
-        TeamBox.Visible = true
-    else
-        mode = "Single"
-        ModeButton.Text = "Mode: Single Target"
-        ModeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-        UserIdBox.Visible = true
-        TeamBox.Visible = false
-    end
-end)
-
--- Update target user id
-UserIdBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        local num = tonumber(UserIdBox.Text)
-        if num then
-            TargetUserId = num
-            print("Target UserId set to:", TargetUserId)
-        else
-            print("Invalid UserId entered!")
-        end
-    end
-end)
-
--- Update target team name
-TeamBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        TargetTeam = TeamBox.Text
-        print("Target Team set to:", TargetTeam)
-    end
-end)
-
--- Kill loop
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if killLoop and game.ReplicatedStorage:FindFirstChild("CarbonResource") then
-            for _, player in pairs(game.Players:GetPlayers()) do
-                if player.Character and player.Character:FindFirstChild("Humanoid") then
-                    if mode == "All" then
-                        game.ReplicatedStorage.CarbonResource.Events:GetChildren()[4]:FireServer(
-                            player.Character.Humanoid,
-                            100,
-                            "Head",
-                            {'nil', 'Auth', 'nil', 'nil'}
-                        )
-                    elseif mode == "Single" and player.UserId == TargetUserId then
-                        game.ReplicatedStorage.CarbonResource.Events:GetChildren()[4]:FireServer(
-                            player.Character.Humanoid,
-                            100,
-                            "Head",
-                            {'nil', 'Auth', 'nil', 'nil'}
-                        )
-                    elseif mode == "Team" and player.Team and player.Team.Name == TargetTeam then
-                        game.ReplicatedStorage.CarbonResource.Events:GetChildren()[4]:FireServer(
-                            player.Character.Humanoid,
-                            100,
-                            "Head",
-                            {'nil', 'Auth', 'nil', 'nil'}
-                        )
-                    end
+-- Function to brute force common UGC names
+local function findUGCNames()
+    local foundUGC = {}
+    
+    -- Extended list of potential UGC names
+    local potentialNames = {
+        -- Hats and headwear
+        "Crown", "Hat", "Cap", "Helmet", "Headband", "Beanie", "TopHat", "Fedora",
+        "Crown1", "Crown2", "Crown3", "Hat1", "Hat2", "Hat3", "Hat4", "Hat5",
+        
+        -- Accessories  
+        "Glasses", "Sunglasses", "Mask", "Bandana", "Scarf", "Necklace", "Earrings",
+        "Accessory", "Accessory1", "Accessory2", "Accessory3", "Accessory4", "Accessory5",
+        
+        -- Awards and trophies
+        "Trophy", "Medal", "Badge", "Award", "Prize", "Cup", "Ribbon",
+        "Trophy1", "Trophy2", "Trophy3", "GoldTrophy", "SilverTrophy", "BronzeTrophy",
+        
+        -- Tools and weapons
+        "Sword", "Axe", "Hammer", "Staff", "Wand", "Tool", "Weapon",
+        "Sword1", "Sword2", "Blade", "Katana", "Dagger",
+        
+        -- Clothing
+        "Shirt", "Pants", "Jacket", "Coat", "Dress", "Uniform", "Armor",
+        "Cape", "Cloak", "Robe", "Vest", "Hoodie",
+        
+        -- Pets and companions
+        "Pet", "Companion", "Animal", "Dog", "Cat", "Bird", "Dragon",
+        "Pet1", "Pet2", "Pet3", "Familiar",
+        
+        -- Special items
+        "Key", "Orb", "Crystal", "Gem", "Ring", "Amulet", "Charm",
+        "Special", "Rare", "Epic", "Legendary", "Unique",
+        
+        -- Numbered items
+        "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10",
+        "UGC1", "UGC2", "UGC3", "UGC4", "UGC5",
+        
+        -- Game specific (modify based on the game you're in)
+        "FinaleItem", "EventItem", "SeasonItem", "LimitedItem",
+        "Champion", "Winner", "Victor", "Hero"
+    }
+    
+    print("Searching for UGC items...")
+    print("Found items:")
+    print("=" .. string.rep("=", 50))
+    
+    for _, name in pairs(potentialNames) do
+        local success, result = pcall(function()
+            return ServerAssets.request("UGC", name)
+        end)
+        
+        if success and result then
+            foundUGC[name] = result
+            print("✓ " .. name .. " - Found!")
+            
+            -- Try to get more info about the item
+            if result:FindFirstChildWhichIsA("BasePart") then
+                local part = result:FindFirstChildWhichIsA("BasePart")
+                print("  └─ Has BasePart: " .. part.Name)
+                if part.MeshId and part.MeshId ~= "" then
+                    print("  └─ MeshId: " .. tostring(part.MeshId))
                 end
+                if part.TextureId and part.TextureId ~= "" then
+                    print("  └─ TextureId: " .. tostring(part.TextureId))
+                end
+            end
+        else
+            -- Uncomment this if you want to see failed attempts
+            -- print("✗ " .. name .. " - Not found")
+        end
+        
+        -- Small delay to prevent overwhelming the server
+        task.wait(0.1)
+    end
+    
+    print("=" .. string.rep("=", 50))
+    print("Search complete! Found " .. #foundUGC .. " UGC items.")
+    
+    return foundUGC
+end
+
+-- Function to try different category names (not just UGC)
+local function exploreCategories()
+    local categories = {
+        "UGC", "Assets", "Items", "Accessories", "Hats", "Tools", 
+        "Weapons", "Clothing", "Pets", "Trophies", "Badges", "Special",
+        "Models", "Parts", "Objects", "Collectibles"
+    }
+    
+    print("\nExploring different categories...")
+    
+    for _, category in pairs(categories) do
+        print("\nTrying category: " .. category)
+        
+        -- Try some common item names in each category
+        local testItems = {"Item1", "Test", "Default", "Basic", "Standard"}
+        
+        for _, item in pairs(testItems) do
+            local success, result = pcall(function()
+                return ServerAssets.request(category, item)
+            end)
+            
+            if success and result then
+                print("  ✓ Found: " .. category .. "/" .. item)
             end
         end
     end
-end)
+end
+
+-- Execute the search
+local foundUGC = findUGCNames()
+
+-- Also explore other categories
+exploreCategories()
+
+-- Create a summary
+print("\n" .. string.rep("=", 60))
+print("SUMMARY - Found UGC Items:")
+for name, item in pairs(foundUGC) do
+    print("- " .. name)
+end
+print(string.rep("=", 60))
